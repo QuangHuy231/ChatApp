@@ -123,7 +123,7 @@ const FormContainer = styled.div`
   justify-content: center;
   gap: 1rem;
   align-items: center;
-  background-color: #131324;
+  background-color: #f8ede3;
   .brand {
     display: flex;
     align-items: center;
@@ -137,25 +137,25 @@ const FormContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    background-color: #00000076;
+    background-color: #dfd3c3;
     border-radius: 2rem;
     padding: 3rem 5rem;
   }
   input {
     background-color: transparent;
     padding: 1rem;
-    border: 0.1rem solid #4e0eff;
+    border: 0.1rem solid #7d6e83;
     border-radius: 0.4rem;
-    color: white;
+    color: black;
     width: 100%;
     font-size: 1rem;
     &:focus {
-      border: 0.1rem solid #997af0;
+      border: 0.1rem solid #d0b8a8;
       outline: none;
     }
   }
   button {
-    background-color: #4e0eff;
+    background-color: #d0b8a8;
     color: white;
     padding: 1rem 2rem;
     border: none;
@@ -165,7 +165,7 @@ const FormContainer = styled.div`
     font-size: 1rem;
     text-transform: uppercase;
     &:hover {
-      background-color: #4e0eff;
+      background-color: #7d6e83;
     }
   }
   span {
