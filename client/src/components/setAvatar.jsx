@@ -1,25 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { setAvatarRoute } from "../utils/APIRoute.js";
+import { AuthContext } from "../context/authContext.js";
 export default function SetAvatar() {
   const navigate = useNavigate();
   const [avatar, setAvatar] = useState(null);
-  const toastOptions = {
-    position: "bottom-right",
-    autoClose: 8000,
-    pauseOnHover: true,
-    draggable: true,
-    theme: "dark",
-  };
+  const { currentUser } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchUser = () => {
-      if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY))
-        navigate("/login");
+      if (!localStorage.getItem("user")) navigate("/login");
     };
     fetchUser();
   }, []);
@@ -49,29 +42,14 @@ export default function SetAvatar() {
 
   const setProfilePicture = async () => {
     const imgUrl = await upload();
-    if (setAvatar === undefined) {
-      toast.error("Please select an avatar", toastOptions);
-    } else {
-      const user = await JSON.parse(
-        localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-      );
 
-      const { data } = await axios.post(`${setAvatarRoute}/${user._id}`, {
-        image: imgUrl,
-      });
+    const user = await JSON.parse(localStorage.getItem("user"));
+    await axios.put(`${setAvatarRoute}/${user.id}`, {
+      image: imgUrl,
+    });
 
-      if (data.isSet) {
-        user.isAvatarImageSet = true;
-        user.avatarImage = data.image;
-        localStorage.setItem(
-          process.env.REACT_APP_LOCALHOST_KEY,
-          JSON.stringify(user)
-        );
-        navigate("/");
-      } else {
-        toast.error("Error setting avatar. Please try again.", toastOptions);
-      }
-    }
+    localStorage.setItem("user", JSON.stringify(currentUser));
+    navigate("/login");
   };
 
   return (
@@ -90,7 +68,6 @@ export default function SetAvatar() {
         <button onClick={setProfilePicture} className="submit-btn">
           Set as Profile Picture
         </button>
-        <ToastContainer />
       </Container>
     </>
   );

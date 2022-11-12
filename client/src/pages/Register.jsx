@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Logo from "../assets/logo2.png";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { registerRoute } from "../utils/APIRoute";
 
@@ -14,58 +13,17 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
-  const toastOptions = {
-    position: "bottom-right",
-    autoClose: 8000,
-    pauseOnHover: true,
-    draggable: true,
-    theme: "dark",
-  };
-  const handleValidation = () => {
-    const { password, confirmPassword, username, email } = values;
-    if (password !== confirmPassword) {
-      toast.error(
-        "Password and confirm password should be same.",
-        toastOptions
-      );
-      return false;
-    } else if (username.length < 3) {
-      toast.error(
-        "Username should be greater than 3 characters.",
-        toastOptions
-      );
-      return false;
-    } else if (password.length < 8) {
-      toast.error(
-        "Password should be equal or greater than 8 characters.",
-        toastOptions
-      );
-      return false;
-    } else if (email === "") {
-      toast.error("Email is required.", toastOptions);
-      return false;
-    }
 
-    return true;
-  };
+  const [err, setError] = useState(null);
 
   const navigate = useNavigate();
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (handleValidation()) {
-      const { email, username, password } = values;
-      const { data } = await axios.post(registerRoute, {
-        username,
-        email,
-        password,
-      });
-
-      if (data.status === false) {
-        toast.error(data.msg, toastOptions);
-      }
-      if (data.status === true) {
-        navigate("/login");
-      }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(registerRoute, values);
+      navigate("/login");
+    } catch (err) {
+      setError(err.response.data);
     }
   };
 
@@ -98,20 +56,14 @@ const Register = () => {
             name="password"
             onChange={(e) => handleChange(e)}
           />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            name="confirmPassword"
-            onChange={(e) => handleChange(e)}
-          />
-          <button type="submit">Create User</button>
 
+          <button type="submit">Create User</button>
+          {err && <p>{err}</p>}
           <span>
             Already have an account ? <Link to="/login">Login.</Link>
           </span>
         </form>
       </FormContainer>
-      <ToastContainer />
     </>
   );
 };
@@ -167,6 +119,11 @@ const FormContainer = styled.div`
     &:hover {
       background-color: #7d6e83;
     }
+  }
+  p {
+    font-size: 12px;
+    color: red;
+    text-align: center;
   }
   span {
     color: white;

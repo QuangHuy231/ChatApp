@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Logo from "../assets/logo2.png";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { loginRoute } from "../utils/APIRoute";
+
+import { AuthContext } from "../context/authContext.js";
 
 const Login = () => {
   const [values, setValues] = useState({
@@ -13,49 +11,23 @@ const Login = () => {
     password: "",
   });
 
+  const { login } = useContext(AuthContext);
+
   const navigate = useNavigate();
-  const toastOptions = {
-    position: "bottom-right",
-    autoClose: 8000,
-    pauseOnHover: true,
-    draggable: true,
-    theme: "dark",
-  };
-  const handleValidation = () => {
-    const { password, username } = values;
-    if (password === "" && username === "") {
-      toast.error("Password and UserName is required.", toastOptions);
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (handleValidation()) {
-      const { username, password } = values;
-      const { data } = await axios.post(loginRoute, {
-        username,
-        password,
-      });
-
-      if (data.status === false) {
-        toast.error(data.msg, toastOptions);
-      }
-      if (data.status === true) {
-        localStorage.setItem(
-          process.env.REACT_APP_LOCALHOST_KEY,
-          JSON.stringify(data.user)
-        );
-        {
-          data.user.avatarImage ? navigate("/") : navigate("/setAvatar");
-        }
-      }
-    }
-  };
-
+  const [err, setError] = useState(null);
   const handleChange = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      await login(values);
+      navigate("/");
+    } catch (err) {
+      setError(err.response.data);
+    }
   };
 
   return (
@@ -80,13 +52,13 @@ const Login = () => {
           />
 
           <button type="submit">Login</button>
+          {err && <p>{err}</p>}
 
           <span>
             Don't have an account ? <Link to="/register">Register</Link>
           </span>
         </form>
       </FormContainer>
-      <ToastContainer />
     </>
   );
 };
@@ -142,6 +114,11 @@ const FormContainer = styled.div`
     &:hover {
       background-color: #7d6e83;
     }
+  }
+  p {
+    font-size: 12px;
+    color: red;
+    text-align: center;
   }
   span {
     color: white;

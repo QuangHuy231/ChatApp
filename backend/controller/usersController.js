@@ -1,81 +1,78 @@
-import User from "../model/usersModel.js";
+import db from "../connectDB.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-export const register = async (req, res, next) => {
-  try {
-    const { username, email, password } = req.body;
-    const usernameCheck = await User.findOne({ username });
-    if (usernameCheck)
-      return res.json({ msg: "Username already used", status: false });
-    const emailCheck = await User.findOne({ email });
-    if (emailCheck)
-      return res.json({ msg: "Email already used", status: false });
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      email,
-      username,
-      password: hashedPassword,
+export const register = (req, res) => {
+  //check existing user
+
+  const q = "SELECT * FROM `users` WHERE `email` = ? OR `username` = ?";
+  db.query(q, [req.body.email, req.body.username], (err, data) => {
+    if (err) return res.json(err);
+    if (data.length) return res.status(409).json("User already exists!");
+
+    //hash the password and create a user
+
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(req.body.password, salt);
+
+    const q = "INSERT INTO users(`username`,`email`,`password`) VALUES (?)";
+
+    const values = [req.body.username, req.body.email, hash];
+
+    db.query(q, [values], (err, data) => {
+      if (err) return res.json(err);
+      return res.status(200).json("User has been created");
     });
-    delete user.password;
-    return res.json({ status: true, user });
-  } catch (ex) {
-    next(ex);
-  }
+  });
 };
-export const login = async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user)
-      return res.json({ msg: "Incorrect Username or Password", status: false });
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
-      return res.json({ msg: "Incorrect Username or Password", status: false });
-    delete user.password;
-    return res.json({ status: true, user });
-  } catch (ex) {
-    next(ex);
-  }
-};
-export const setAvatar = async (req, res, next) => {
-  try {
-    const userId = req.params.id;
-    const avatarImage = req.body.image;
-    const userData = await User.findByIdAndUpdate(
-      userId,
-      {
-        isAvatarImageSet: true,
-        avatarImage,
-      },
-      { new: true }
+
+export const login = (req, res) => {
+  // CHECK USERNAMe
+
+  const q = "SELECT * FROM users WHERE username = ?";
+
+  db.query(q, [req.body.username], (err, data) => {
+    if (err) return res.json(err);
+    if (data.length == 0) return res.status(404).json("User not found!");
+
+    // CHECK PASSWORD
+
+    const isPasswordCorrect = bcrypt.compareSync(
+      req.body.password,
+      data[0].password
     );
-    return res.json({
-      isSet: userData.isAvatarImageSet,
-      image: userData.avatarImage,
+
+    if (!isPasswordCorrect)
+      return res.status(400).json("Wrong username or password");
+
+    const { password, ...other } = data[0];
+
+    res.status(200).json(other);
+  });
+};
+export const logOut = (req, res) => {
+  return res.status(200).json("User logouted");
+};
+export const setAvatar = (req, res) => {
+  const userId = req.params.id;
+  const avatarImage = req.body.image;
+  const q =
+    "UPDATE users SET `avatarImage`=?, `isAvatarImageSet`=1 WHERE `id`=?";
+  db.query(q, [avatarImage, userId], (err, data) => {
+    if (err) return res.status(403).json(err);
+
+    return res.status(200).json({
+      isSet: true,
     });
-  } catch (ex) {
-    next(ex);
-  }
+  });
 };
-export const getAllUsers = async (req, res, next) => {
-  try {
-    const users = await User.find().select([
-      "email",
-      "username",
-      "avatarImage",
-      "_id",
-    ]);
-    return res.json(users);
-  } catch (ex) {
-    next(ex);
-  }
-};
-export const logOut = (req, res, next) => {
-  try {
-    if (!req.params.id) return res.json({ msg: "User id is required " });
-    onlineUsers.delete(req.params.id);
-    return res.status(200).send();
-  } catch (ex) {
-    next(ex);
-  }
+export const getAllUsers = (req, res) => {
+  const q = "SELECT * FROM users WHERE NOT `id`=?";
+  const id = req.params.id;
+
+  db.query(q, [id], (err, data) => {
+    if (err) return res.send(err);
+
+    return res.status(200).json(data);
+  });
 };
