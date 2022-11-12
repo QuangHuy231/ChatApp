@@ -57,3 +57,25 @@ export const setAvatar = async (req, res, next) => {
     next(ex);
   }
 };
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.find().select([
+      "email",
+      "username",
+      "avatarImage",
+      "_id",
+    ]);
+    return res.json(users);
+  } catch (ex) {
+    next(ex);
+  }
+};
+export const logOut = (req, res, next) => {
+  try {
+    if (!req.params.id) return res.json({ msg: "User id is required " });
+    onlineUsers.delete(req.params.id);
+    return res.status(200).send();
+  } catch (ex) {
+    next(ex);
+  }
+};
